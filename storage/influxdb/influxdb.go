@@ -74,6 +74,10 @@ const (
 	serFsLimit string = "fs_limit"
 	// Filesystem usage.
 	serFsUsage string = "fs_usage"
+	// IO reads
+	serIoRead string = "io_read"
+	// IO writes
+	serIoWrite string = "io_write"
 )
 
 func new() (storage.StorageDriver, error) {
@@ -208,9 +212,30 @@ func (self *influxdbStorage) containerStatsToPoints(
 	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
 	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
 
+	// Disk IO Stats
+	points = append(points, ioPoints(stats.DiskIo.IoServiceBytes, serIoRead, "Read")...)
+	points = append(points, ioPoints(stats.DiskIo.IoServiceBytes, serIoWrite, "Write")...)
+
 	self.tagPoints(cInfo, stats, points)
 
 	return points
+}
+
+// ioPoints is a helper method for assembling per-disk stats.
+func ioPoints(ioStats []info.PerDiskStats, measurement, ioType string) (points []*influxdb.Point) {
+	points = make([]*influxdb.Point, len(ioStats))
+	for i, stat := range ioStats {
+		points[i] = &influxdb.Point{
+			Measurement: measurement,
+			Tags:        map[string]string{
+				"device": stat.Device,
+			},
+			Fields:      map[string]interface{}{
+				fieldValue: float64(stat.Stats[ioType]),
+			},
+		}
+	}
+	return
 }
 
 func (self *influxdbStorage) OverrideReadyToFlush(readyToFlush func() bool) {

@@ -236,6 +236,8 @@ func TestContainerStatsToPoints(t *testing.T) {
 	assertContainsPointWithValue(t, points, serRxErrors, stats.Network.RxErrors)
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxBytes)
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxErrors)
+	assertContainsPointWithValue(t, points, serIoRead, stats.Network.TxErrors)
+	assertContainsPointWithValue(t, points, serIoWrite, stats.Network.TxErrors)
 
 	for _, cpu_usage := range stats.Cpu.Usage.PerCpu {
 		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)
